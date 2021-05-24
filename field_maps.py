@@ -220,12 +220,14 @@ class MakeFieldMaps:
             self.dlg.label_3.setText('No data')
 
     def search(self):
+        print("search was called")
         data_entered = self.dlg.lineEdit.text()
         if data_entered == '':
             self.iface.messageBar().pushCritical("Error", "The search field cannot be blank")
         else:
             global results
-            results = address_parser.main(data_entered)  # note this is a dictionary - address is key, coords is value
+            if data_entered not in results: 
+                results = address_parser.main(data_entered)  # note this is a dictionary - address is key, coords is value
             if not results is None:
                 self.dlg.comboBox.clear()  # remove old items if present
                 if results:
@@ -233,11 +235,15 @@ class MakeFieldMaps:
                     self.selectionchange()
                 else:
                     self.dlg.comboBox.addItems(['No results found'])
+        self.dlg.pushButton.clicked.disconnect(self.search)
 
     def go(self):
         global results
         global pt
         if results:
+            print(results)
+            # clear any old results
+            # results.clear()
             coords_tuple = results[self.dlg.comboBox.currentText()]
             # set up transform
             # transform point for panning
@@ -250,7 +256,7 @@ class MakeFieldMaps:
             list_of_coords = cadastral_lookup[0]
             # print(results, cadastral_lookup[1])
             # see if we can make vector layer from coordinates
-            vlyr = QgsVectorLayer("Polygon", "temporary_polygons", "memory")
+            vlyr = QgsVectorLayer("Polygon?crs=epsg:28355", self.dlg.comboBox.currentText(), "memory")
             vlyr.startEditing()
             dprov = vlyr.dataProvider()
             poly = QgsFeature()
@@ -286,6 +292,8 @@ class MakeFieldMaps:
             pt = transform.transform(new_point.x(), new_point.y())
             self.iface.mapCanvas().setCenter(pt)
             self.iface.mapCanvas().refreshAllLayers()
+        self.dlg.pushButton_2.clicked.disconnect(self.go)
+
 
     def make_layout(self):
         projectInstance = QgsProject.instance()
